@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disparo WhatsApp — ATN × TIM</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg:      #F0F6F5;
+    --surface: #FFFFFF;
+    --border:  #D1E8E5;
+    --text:    #0D1117;
+    --muted:   #64748B;
+    --hint:    #94A3B8;
+    --teal:    #00A896;
+    --orange:  #F5A623;
+    --red:     #DC2626;
+    --green:   #16A34A;
+    --radius:  10px;
+    --shadow:  0 1px 3px rgba(0,168,150,.1), 0 1px 2px rgba(0,0,0,.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .shell { display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 240px; background: #0A1628; color: #fff;
+    display: flex; flex-direction: column; position: fixed;
+    top: 0; left: 0; bottom: 0; z-index: 50;
+  }
+  .sidebar-logo {
+    padding: 16px 14px; border-bottom: 1px solid rgba(255,255,255,.07);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-text { line-height: 1.2; }
+  .logo-text strong { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: .3px; }
+  .logo-text span { font-size: 10px; color: #4B5563; display: block; margin-top: 1px; }
+
+  .sidebar-nav { flex: 1; padding: 12px 10px; }
+  .nav-section { font-size: 10px; font-weight: 600; color: #374151;
+    text-transform: uppercase; letter-spacing: .8px; padding: 14px 8px 6px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: 7px; cursor: pointer;
+    font-size: 13px; font-weight: 400; color: #9CA3AF;
+    transition: all .15s; border: none; background: none;
+    width: 100%; text-align: left; margin-bottom: 1px;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.05); color: #E5E7EB; }
+  .nav-item.active { background: rgba(0,168,150,.18); color: #00D4C4; font-weight: 600; }
+  .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-footer {
+    padding: 14px 18px; border-top: 1px solid rgba(255,255,255,.07);
+    font-size: 11px; color: #374151;
+  }
+  .sidebar-footer .phone { color: #2DD4BF; font-family: monospace; font-size: 11px; margin-top: 2px; }
+
+  /* MAIN */
+  .main { margin-left: 240px; padding: 28px; flex: 1; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header { margin-bottom: 24px; }
+  .page-header h1 { font-size: 22px; font-weight: 700; color: var(--text); }
+  .page-header p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .page-header-row { display: flex; justify-content: space-between; align-items: flex-start; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    font-size: 13px; font-weight: 600; color: var(--text);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .card-body { padding: 20px; }
+
+  /* STAT CARDS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+  .stat-card {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border); padding: 18px 20px;
+    box-shadow: var(--shadow); border-top: 3px solid transparent;
+  }
+  .stat-card.blue   { border-top-color: #00A896; }
+  .stat-card.green  { border-top-color: #00A896; }
+  .stat-card.orange { border-top-color: var(--orange); }
+  .stat-card.red    { border-top-color: var(--red); }
+  .stat-card.purple { border-top-color: #7C3AED; }
+  .stat-card .stat-icon { font-size: 20px; margin-bottom: 10px; }
+  .stat-card .stat-num { font-size: 28px; font-weight: 700; line-height: 1; }
+  .stat-card.blue  .stat-num { color: #00A896; }
+  .stat-card.green .stat-num { color: #00A896; }
+  .stat-card.orange .stat-num { color: var(--orange); }
+  .stat-card.red   .stat-num { color: var(--red); }
+  .stat-card.purple .stat-num { color: #7C3AED; }
+  .stat-card .stat-label { font-size: 12px; color: var(--muted); margin-top: 5px; }
+
+  /* FORM */
+  .form-group { margin-bottom: 16px; }
+  .form-row { display: grid; gap: 14px; }
+  .form-row.cols-2 { grid-template-columns: 1fr 1fr; }
+  .form-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  label { display: block; font-size: 12px; font-weight: 600; color: #4A5568; margin-bottom: 6px; }
+  label .req { color: var(--red); margin-left: 2px; }
+
+  input, select, textarea {
+    width: 100%; padding: 9px 12px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: 13px; font-family: inherit;
+    color: var(--text); background: #FAFAFA; outline: none;
+    transition: border .15s, background .15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: #00A896; background: #fff; }
+  textarea { min-height: 70px; resize: vertical; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 18px; border-radius: 8px; border: none;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all .15s; font-family: inherit;
+  }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary { background: #00A896; color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #008A7C; }
+  .btn-success { background: #16A34A; color: #fff; }
+  .btn-success:hover:not(:disabled) { background: #15803D; }
+  .btn-danger  { background: var(--red); color: #fff; }
+  .btn-danger:hover:not(:disabled)  { background: #B91C1C; }
+  .btn-ghost   { background: #F1F5F9; color: #4A5568; border: 1.5px solid var(--border); }
+  .btn-ghost:hover:not(:disabled)   { background: #E2E8F0; }
+  .btn-warning { background: var(--orange); color: #fff; }
+  .btn-warning:hover:not(:disabled) { background: #D97706; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* BADGE */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; letter-spacing: .3px;
+  }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .7; }
+  .badge-blue   { background: #E6F7F6; color: #007A6E; }
+  .badge-green  { background: #DCFCE7; color: #15803D; }
+  .badge-orange { background: #FFF7ED; color: #C2410C; }
+  .badge-red    { background: #FEF2F2; color: #B91C1C; }
+  .badge-purple { background: #F5F3FF; color: #6D28D9; }
+  .badge-gray   { background: #F8FAFC; color: #475569; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: #F8FAFC; text-align: left; padding: 10px 14px;
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .5px;
+    border-bottom: 1.5px solid var(--border); white-space: nowrap;
+  }
+  td { padding: 11px 14px; border-bottom: 1px solid #F1F5F9; color: var(--text); }
+  tr:hover td { background: #F8FAFC; }
+  tr:last-child td { border-bottom: none; }
+  .td-mono { font-family: monospace; font-size: 12px; }
+  .td-muted { color: var(--muted); font-size: 12px; }
+  .empty-row td { text-align: center; color: var(--hint); padding: 36px; }
+
+  /* PROGRESS */
+  .progress-bar { height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .progress-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, #00A896, #F5A623);
+    transition: width .5s ease;
+  }
+  .progress-labels {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--muted); margin-top: 5px;
+  }
+
+  /* STEPS */
+  .steps { display: flex; gap: 0; margin-bottom: 22px; background: var(--surface);
+    border-radius: var(--radius); padding: 5px; border: 1px solid var(--border); }
+  .step {
+    flex: 1; display: flex; align-items: center; gap: 9px;
+    padding: 10px 14px; border-radius: 8px; transition: all .15s;
+  }
+  .step.active { background: #E6F7F6; }
+  .step-num {
+    width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+    background: var(--border); color: var(--muted); transition: all .15s;
+  }
+  .step.active .step-num { background: #00A896; color: #fff; }
+  .step.done .step-num { background: #16A34A; color: #fff; }
+  .step-label { font-size: 12px; font-weight: 500; color: var(--muted); }
+  .step.active .step-label { color: #00A896; font-weight: 600; }
+  .step.done .step-label { color: #16A34A; }
+  .step-divider { width: 1px; background: var(--border); margin: 8px 0; }
+
+  /* UPLOAD */
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    padding: 36px; text-align: center; cursor: pointer;
+    background: #FAFAFA; transition: all .2s;
+  }
+  .upload-zone:hover { border-color: #00A896; background: #E6F7F6; }
+  .upload-zone .upload-icon { font-size: 36px; margin-bottom: 10px; }
+  .upload-zone .upload-title { font-weight: 600; font-size: 14px; color: var(--text); }
+  .upload-zone .upload-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* INFO BOX */
+  .info-box {
+    border-radius: 8px; padding: 11px 14px; font-size: 12px;
+    display: flex; gap: 10px; align-items: flex-start; margin-bottom: 14px;
+  }
+  .info-box.blue   { background: #E6F7F6; color: #007A6E; border: 1px solid #99DDD8; }
+  .info-box.yellow { background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; }
+  .info-box.green  { background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; }
+  .info-box .info-icon { font-size: 15px; flex-shrink: 0; }
+
+  /* TOGGLE */
+  .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+  .toggle {
+    width: 40px; height: 22px; border-radius: 11px; border: none;
+    background: var(--border); position: relative; cursor: pointer;
+    transition: background .2s; padding: 0;
+  }
+  .toggle.on { background: #00A896; }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; transition: left .2s;
+  }
+  .toggle.on::after { left: 21px; }
+  .toggle-label { font-size: 12px; color: var(--muted); }
+
+  /* TOAST */
+  #toast-container {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .toast {
+    padding: 12px 18px; border-radius: 10px; font-size: 13px;
+    font-weight: 500; color: #fff; max-width: 360px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.2); animation: slideIn .2s ease;
+  }
+  .toast.success { background: #15803D; }
+  .toast.error   { background: #B91C1C; }
+  .toast.warning { background: #C2410C; }
+  @keyframes slideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+  /* MODAL */
+  .modal-bg {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: 14px;
+    padding: 26px; width: 90vw; max-width: 560px;
+    max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 18px;
+  }
+  .modal-header h3 { font-size: 16px; font-weight: 700; }
+  .modal-close { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--muted); }
+
+  /* SPINNER */
+  .spinner {
+    width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin .7s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  code { background: #F1F5F9; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+  .text-muted { color: var(--muted); font-size: 12px; }
+  .mt-4 { margin-top: 4px; } .mt-8 { margin-top: 8px; }
+  .flex { display: flex; } .gap-8 { gap: 8px; } .gap-12 { gap: 12px; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .w-full { width: 100%; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div style="width:38px;height:38px;background:#00A896;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">W</div>
+    <div class="logo-text">
+      <strong>Disparo WhatsApp</strong>
+      <span>+55 800 071 7460</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Principal</div>
+    <button class="nav-item active" onclick="goTo('dashboard', this)">
+      <span class="icon">📊</span> Dashboard
+    </button>
+    <button class="nav-item" onclick="goTo('campanhas', this)">
+      <span class="icon">📋</span> Campanhas
+    </button>
+    <div class="nav-section">Ações</div>
+    <button class="nav-item" onclick="goTo('nova', this)">
+      <span class="icon">➕</span> Nova Campanha
+    </button>
+    <button class="nav-item" onclick="goTo('importar', this)">
+      <span class="icon">📥</span> Importar Contatos
+    </button>
+    <button class="nav-item" onclick="goTo('acompanhar', this)">
+      <span class="icon">📡</span> Acompanhar Disparo
+    </button>
+    <div class="nav-section">Configuração</div>
+    <button class="nav-item" onclick="goTo('templates', this)">
+      <span class="icon">🗂️</span> Templates HSM
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <div>Phone Number ID</div>
+    <div class="phone">793128797223808</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- HEADER BANNER -->
+<div style="background:linear-gradient(135deg,#003087 0%,#0044B8 100%);border-radius:12px;padding:12px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">
+  <div style="display:flex;align-items:center;gap:14px">
+    <div style="background:#fff;border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:6px">
+      <span style="color:#003087;font-weight:900;font-size:14px;letter-spacing:-0.5px">TIM</span>
+      <span style="width:3px;height:3px;border-radius:50%;background:#E8001C;display:inline-block"></span>
+      <span style="color:#E8001C;font-weight:700;font-size:10px">BRASIL</span>
+    </div>
+    <div>
+      <div style="color:#fff;font-weight:600;font-size:13px">Painel de Disparos WhatsApp</div>
+      <div style="color:rgba(255,255,255,.6);font-size:11px">Campanhas em massa via API Meta</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div style="text-align:right">
+      <div style="color:rgba(255,255,255,.5);font-size:10px">Operado por</div>
+      <div style="color:#00D4C4;font-weight:700;font-size:13px;letter-spacing:.5px">ATN</div>
+    </div>
+    <div style="width:1px;height:30px;background:rgba(255,255,255,.15)"></div>
+    <div style="background:rgba(0,168,150,.2);border:1px solid rgba(0,212,196,.3);border-radius:6px;padding:4px 10px">
+      <div style="color:#00D4C4;font-size:10px;font-weight:600">📱 0800 071 7460</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ──────────────────────────────────────────────────────────── -->
+<div id="page-dashboard" class="page active">
+  <div class="page-header-row">
+    <div class="page-header">
+      <h1>Dashboard</h1>
+      <p>Visão geral dos disparos WhatsApp</p>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="loadDashboard()">🔄 Atualizar</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card blue">
+      <div class="stat-icon">📋</div>
+      <div class="stat-num" id="stat-campanhas">—</div>
+      <div class="stat-label">Campanhas ativas</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-icon">✅</div>
+      <div class="stat-num" id="stat-enviados">—</div>
+      <div class="stat-label">Enviados</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-num" id="stat-pendentes">—</div>
+      <div class="stat-label">Pendentes</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-icon">❌</div>
+      <div class="stat-num" id="stat-erros">—</div>
+      <div class="stat-label">Erros</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      Últimas campanhas
+      <span class="badge badge-gray" id="badge-camps">0 campanhas</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Campanha</th><th>Template HSM</th><th>Tipo</th>
+          <th>Status</th><th>Total</th><th>Enviados</th><th>Data</th>
+        </tr></thead>
+        <tbody id="dash-table-body">
+          <tr class="empty-row"><td colspan="7">Clique em Atualizar para carregar</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── CAMPANHAS ──────────────────────────────────────────────────────────── -->
+<div id="page-campanhas" class="page">
+  <div class="page-header-row">
+    <div class="page-header">
+      <h1>Campanhas</h1>
+      <p>Gerencie e controle seus disparos em massa</p>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-ghost btn-sm" onclick="loadCampanhas()">🔄 Atualizar</button>
+      <button class="btn btn-success btn-sm" onclick="dispararSelecionada()">▶ Iniciar selecionada</button>
+      <button class="btn btn-warning btn-sm" onclick="pausarSelecionada()">⏸ Pausar</button>
+      <button class="btn btn-danger btn-sm" onclick="cancelarSelecionada()">✕ Cancelar</button>
+    </div>
+  </div>
+  <div class="info-box blue">
+    <span class="info-icon">ℹ️</span>
+    Clique em uma linha para selecionar a campanha. Depois use os botões acima para controlar o disparo.
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Campanha</th><th>Template</th><th>Tipo</th>
+          <th>Status</th><th>Total</th><th>Enviados</th><th>Erros</th><th>Data</th><th>Ações</th>
+        </tr></thead>
+        <tbody id="camp-table-body">
+          <tr class="empty-row"><td colspan="10">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── NOVA CAMPANHA ──────────────────────────────────────────────────────── -->
+<div id="page-nova" class="page">
+  <div class="page-header">
+    <h1>Nova Campanha</h1>
+    <p>Configure os dados antes do disparo</p>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px">
+    <div class="card">
+      <div class="card-header">Criar campanha</div>
+      <div class="card-body">
+        <div class="form-group">
+          <label>Nome da campanha <span class="req">*</span></label>
+          <input id="inp-nome-camp" placeholder="Ex: Cobrança TIM Julho 2025">
+        </div>
+        <div class="form-group">
+          <label>Template HSM <span class="req">*</span></label>
+          <select id="sel-hsm" onchange="onHSMChange()">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div id="hsm-info" style="display:none" class="info-box blue">
+          <span class="info-icon">📱</span>
+          <div id="hsm-info-text"></div>
+        </div>
+        <div class="form-group">
+          <label>Status inicial</label>
+          <select id="sel-status-inicial">
+            <option value="FILA">Na fila (aguardar disparo manual)</option>
+            <option value="EM_ANDAMENTO">Em andamento (disparar imediatamente)</option>
+          </select>
+        </div>
+        <button class="btn btn-primary w-full" onclick="criarCampanha()" style="justify-content:center;margin-top:4px">
+          ➕ Criar Campanha
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Informações do disparo</div>
+      <div class="card-body">
+        <div class="info-box yellow">
+          <span class="info-icon">⚠️</span>
+          Templates precisam estar aprovados na Meta. Use o nome exato do WhatsApp Business Manager.
+        </div>
+        <div class="info-box blue">
+          <span class="info-icon">📋</span>
+          <div>
+            <strong>Fluxo de disparo:</strong><br>
+            1. Crie a campanha<br>
+            2. Importe os contatos com CSV<br>
+            3. Inicie o disparo pela aba Campanhas<br>
+            4. Monitore em tempo real no Acompanhar
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px">Número de disparo</div>
+        <div style="font-family:monospace;font-size:13px;color:#00A896;background:#E6F7F6;padding:10px 14px;border-radius:8px">
+          +55 800 071 7460<br>
+          <span style="font-size:11px;color:var(--muted)">Phone Number ID: 793128797223808</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── IMPORTAR CONTATOS ───────────────────────────────────────────────────── -->
+<div id="page-importar" class="page">
+  <div class="page-header">
+    <h1>Importar Contatos</h1>
+    <p>Importe CSV e adicione contatos à campanha para disparo</p>
+  </div>
+
+  <div class="steps">
+    <div class="step active" id="step-1">
+      <div class="step-num">1</div>
+      <div class="step-label">Selecionar arquivo</div>
+    </div>
+    <div class="step-divider"></div>
+    <div class="step" id="step-2">
+      <div class="step-num">2</div>
+      <div class="step-label">Mapear colunas</div>
+    </div>
+    <div class="step-divider"></div>
+    <div class="step" id="step-3">
+      <div class="step-num">3</div>
+      <div class="step-label">Concluído</div>
+    </div>
+  </div>
+
+  <div id="imp-step-1">
+    <div class="card">
+      <div class="card-header">Selecionar arquivo e campanha</div>
+      <div class="card-body">
+        <div class="form-row cols-2" style="margin-bottom:18px">
+          <div class="form-group" style="margin:0">
+            <label>Campanha de destino <span class="req">*</span></label>
+            <select id="sel-camp-import">
+              <option value="">Selecione uma campanha...</option>
+            </select>
+          </div>
+          <div></div>
+        </div>
+        <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+          <div class="upload-icon">📂</div>
+          <div class="upload-title">Clique para selecionar o CSV</div>
+          <div class="upload-sub">Separador vírgula (,) ou ponto-e-vírgula (;) · UTF-8</div>
+          <input type="file" id="file-input" accept=".csv" style="display:none" onchange="onFileSelect(event)">
+        </div>
+        <div class="info-box blue" style="margin-top:14px">
+          <span class="info-icon">ℹ️</span>
+          <div>
+            Colunas esperadas: <strong>nome</strong>, <strong>telefone</strong>, cpf (opcional), <strong>valor</strong>, <strong>data_vencimento</strong><br>
+            Para HSM variável: nome, telefone, valor e data_vencimento são obrigatórios.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="imp-step-2" style="display:none">
+    <div class="card">
+      <div class="card-header">
+        <span id="file-name-label">arquivo.csv</span>
+        <button class="btn btn-ghost btn-sm" onclick="resetImport()">← Voltar</button>
+      </div>
+      <div class="card-body">
+        <div class="info-box green">
+          <span class="info-icon">✅</span>
+          Arquivo carregado. Mapeie as colunas abaixo. Nome e Telefone são obrigatórios.
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:12px">Mapeamento de colunas</div>
+        <div class="form-row cols-3">
+          <div class="form-group" style="margin:0">
+            <label>Coluna → Nome <span class="req">*</span></label>
+            <select id="map-nome"></select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Coluna → Telefone <span class="req">*</span></label>
+            <select id="map-telefone"></select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Coluna → CPF</label>
+            <select id="map-cpf"></select>
+          </div>
+        </div>
+        <div class="form-row cols-3" style="margin-top:12px">
+          <div class="form-group" style="margin:0">
+            <label>Coluna → Valor</label>
+            <select id="map-valor"></select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Coluna → Vencimento</label>
+            <select id="map-venc"></select>
+          </div>
+        </div>
+        <hr>
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px">Preview (10 primeiras linhas)</div>
+        <div class="table-wrap" style="max-height:220px;overflow-y:auto">
+          <table id="preview-table">
+            <thead id="preview-thead"></thead>
+            <tbody id="preview-tbody"></tbody>
+          </table>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:18px">
+          <button class="btn btn-ghost" onclick="resetImport()">← Voltar</button>
+          <button class="btn btn-primary" onclick="importar()" id="btn-importar">📥 Importar Contatos</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="imp-step-3" style="display:none">
+    <div class="card">
+      <div class="card-body" style="text-align:center;padding:48px">
+        <div style="font-size:56px;margin-bottom:16px">✅</div>
+        <h3 style="font-size:18px;font-weight:700;color:#16A34A;margin-bottom:8px">Importação concluída!</h3>
+        <p id="import-result-text" class="text-muted" style="margin-bottom:24px"></p>
+        <div class="btn-group" style="justify-content:center">
+          <button class="btn btn-ghost" onclick="resetImport()">Nova importação</button>
+          <button class="btn btn-primary" onclick="goTo('campanhas', document.querySelectorAll('.nav-item')[1])">Ver campanhas →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ACOMPANHAR ─────────────────────────────────────────────────────────── -->
+<div id="page-acompanhar" class="page">
+  <div class="page-header-row">
+    <div class="page-header">
+      <h1>Acompanhar Disparo</h1>
+      <p>Monitore o progresso em tempo real</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px">
+        <label style="margin-bottom:6px">Campanha</label>
+        <select id="sel-camp-acomp" onchange="loadContatos()">
+          <option value="">Selecione uma campanha...</option>
+        </select>
+      </div>
+      <button class="btn btn-ghost" onclick="loadContatos()">🔄 Atualizar</button>
+      <div class="toggle-wrap">
+        <button class="toggle" id="toggle-auto" onclick="toggleAuto()"></button>
+        <span class="toggle-label">Auto-atualizar (5s)</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="acomp-stats" style="display:none">
+    <div class="stats-grid">
+      <div class="stat-card green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-num" id="ac-env">0</div>
+        <div class="stat-label">Enviados</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-num" id="ac-pend">0</div>
+        <div class="stat-label">Pendentes</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">❌</div>
+        <div class="stat-num" id="ac-err">0</div>
+        <div class="stat-label">Erros</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon">📋</div>
+        <div class="stat-num" id="ac-tot">0</div>
+        <div class="stat-label">Total</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+          <span id="ac-camp-nome" style="font-weight:600"></span>
+          <span id="ac-pct" style="color:#00A896;font-weight:700">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="ac-progress" style="width:0%"></div>
+        </div>
+        <div class="progress-labels">
+          <span id="ac-status-badge"></span>
+          <span id="ac-progress-text"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="acomp-filters" style="display:none;margin-bottom:12px">
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-primary btn-sm" id="fil-todos" onclick="setFilter('TODOS')">Todos</button>
+      <button class="btn btn-ghost btn-sm"   id="fil-env"   onclick="setFilter('ENVIADO')">Enviados</button>
+      <button class="btn btn-ghost btn-sm"   id="fil-pend"  onclick="setFilter('PENDENTE')">Pendentes</button>
+      <button class="btn btn-ghost btn-sm"   id="fil-erro"  onclick="setFilter('ERRO')">Erros</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Nome</th><th>Telefone</th><th>CPF</th>
+          <th>Status</th><th>Valor</th><th>Vencimento</th><th>Enviado em</th><th>Erro</th>
+        </tr></thead>
+        <tbody id="cont-table-body">
+          <tr class="empty-row"><td colspan="9">Selecione uma campanha acima</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── TEMPLATES HSM ──────────────────────────────────────────────────────── -->
+<div id="page-templates" class="page">
+  <div class="page-header">
+    <h1>Templates HSM</h1>
+    <p>Gerencie os templates aprovados na Meta</p>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px">
+    <div class="card">
+      <div class="card-header">Cadastrar Template</div>
+      <div class="card-body">
+        <div class="info-box yellow">
+          <span class="info-icon">⚠️</span>
+          Use o nome exato como aparece no WhatsApp Business Manager.
+        </div>
+        <div class="form-group">
+          <label>Nome de exibição</label>
+          <input id="inp-tpl-nome" placeholder="Ex: Cobrança com variáveis">
+        </div>
+        <div class="form-group">
+          <label>Nome Meta (exato) <span class="req">*</span></label>
+          <input id="inp-tpl-meta" placeholder="Ex: tim_fatura_preventivo" style="font-family:monospace">
+        </div>
+        <div class="form-group">
+          <label>Tipo de HSM <span class="req">*</span></label>
+          <select id="sel-tpl-tipo">
+            <option value="fixo">Fixo — sem variáveis</option>
+            <option value="variavel">Variável — nome, telefone, valor, vencimento</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Texto de preview (opcional)</label>
+          <textarea id="inp-tpl-preview" placeholder="Cole o texto do template..."></textarea>
+        </div>
+        <button class="btn btn-ghost w-full" onclick="salvarTemplate()" style="justify-content:center">
+          💾 Salvar Template
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Templates cadastrados</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nome</th><th>Meta</th><th>Tipo</th><th></th></tr></thead>
+          <tbody id="tpl-table-body">
+            <tr class="empty-row"><td colspan="4">Nenhum template</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- MODAL CONTATOS -->
+<div class="modal-bg" id="modal-cont">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-camp-nome">Contatos</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nome</th><th>Telefone</th><th>Status</th><th>Valor</th><th>Vencimento</th></tr></thead>
+        <tbody id="modal-cont-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const SB_URL = 'https://uhynhyewlzcbeycsnapy.supabase.co/rest/v1';
+const SB_KEY = 'sb_publishable_e55mUZdc_UGRvgSYT0n_YA_PSu3P6b4';
+const SB_H   = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let campanhas      = [];
+let templates      = [];
+let contatosAll    = [];
+let selectedCampId = null;
+let autoRefresh    = false;
+let autoInterval   = null;
+let filterStatus   = 'TODOS';
+let csvData        = [];
+let csvHeaders     = [];
+
+// ── ROUTING ───────────────────────────────────────────────────────────────────
+function goTo(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (page === 'dashboard')  loadDashboard();
+  if (page === 'campanhas')  loadCampanhas();
+  if (page === 'nova')       loadTemplatesSelect();
+  if (page === 'importar')   loadCampanhasImport();
+  if (page === 'acompanhar') loadCampanhasAcomp();
+  if (page === 'templates')  loadTemplates();
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function sb(path, opts = {}) {
+  const res = await fetch(`${SB_URL}${path}`, {
+    headers: { ...SB_H, ...(opts.headers || {}) },
+    ...opts
+  });
+  if (!res.ok) { const t = await res.text(); throw new Error(t); }
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function badge(status) {
+  const map = {
+    'FILA':         'badge-blue',
+    'EM_ANDAMENTO': 'badge-green',
+    'FINALIZADA':   'badge-purple',
+    'PAUSADA':      'badge-orange',
+    'CANCELADA':    'badge-red',
+    'PENDENTE':     'badge-orange',
+    'ENVIADO':      'badge-green',
+    'ERRO':         'badge-red',
+  };
+  return `<span class="badge ${map[status] || 'badge-gray'}">${(status||'').replace('_',' ')}</span>`;
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  try { return new Date(d).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'}); }
+  catch { return d; }
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const [contatos, camps] = await Promise.all([
+      sb('/contatos?select=status'),
+      sb('/campanhas?select=*&order=id.desc&limit=10'),
+    ]);
+    const ativas = camps.filter(c => c.status === 'EM_ANDAMENTO').length;
+    document.getElementById('stat-campanhas').textContent  = ativas.toLocaleString();
+    document.getElementById('stat-enviados').textContent   = contatos.filter(c=>c.status==='ENVIADO').length.toLocaleString();
+    document.getElementById('stat-pendentes').textContent  = contatos.filter(c=>c.status==='PENDENTE').length.toLocaleString();
+    document.getElementById('stat-erros').textContent      = contatos.filter(c=>c.status==='ERRO').length.toLocaleString();
+    document.getElementById('badge-camps').textContent     = `${camps.length} campanhas`;
+
+    const tbody = document.getElementById('dash-table-body');
+    if (!camps.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Nenhuma campanha encontrada</td></tr>'; return; }
+    tbody.innerHTML = camps.map(c => {
+      const tot = c.total_contatos || 0;
+      const env = c.enviados || 0;
+      const pct = tot ? Math.round((env/tot)*100) : 0;
+      return `<tr>
+        <td style="font-weight:600">${c.nome}</td>
+        <td><code>${c.template||'—'}</code></td>
+        <td>${c.tipo_hsm==='variavel'?'📌 Variável':'📄 Fixo'}</td>
+        <td>${badge(c.status)}</td>
+        <td>${tot}</td>
+        <td><b style="color:#00A896">${env}</b>${tot?` <span class="td-muted">(${pct}%)</span>`:''}</td>
+        <td class="td-muted">${(c.created_at||'').substring(0,10)||'—'}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) { toast('Erro ao carregar dashboard: ' + e.message, 'error'); }
+}
+
+// ── CAMPANHAS ─────────────────────────────────────────────────────────────────
+async function loadCampanhas() {
+  try {
+    campanhas = await sb('/campanhas?select=*&order=id.desc');
+    renderCampanhas();
+  } catch(e) { toast('Erro: ' + e.message, 'error'); }
+}
+
+function renderCampanhas() {
+  const tbody = document.getElementById('camp-table-body');
+  if (!campanhas.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Nenhuma campanha. Crie uma nova!</td></tr>'; return;
+  }
+  tbody.innerHTML = campanhas.map(c => `
+    <tr onclick="selectCamp(${c.id}, this)" style="cursor:pointer" data-id="${c.id}">
+      <td class="td-muted">#${c.id}</td>
+      <td style="font-weight:600">${c.nome}</td>
+      <td><code>${c.template||'—'}</code></td>
+      <td>${c.tipo_hsm==='variavel'?'📌 Var':'📄 Fixo'}</td>
+      <td>${badge(c.status)}</td>
+      <td>${c.total_contatos||0}</td>
+      <td><b style="color:#00A896">${c.enviados||0}</b></td>
+      <td style="color:var(--red)">${c.erros||0}</td>
+      <td class="td-muted">${(c.created_at||'').substring(0,10)||'—'}</td>
+      <td>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();verContatos(${c.id},'${c.nome.replace(/'/g,"\\'")}')">👁 Ver</button>
+          ${c.status==='FILA'||c.status==='PAUSADA' ? `<button class="btn btn-success btn-sm" onclick="event.stopPropagation();disparar(${c.id})">▶</button>` : ''}
+          ${c.status==='EM_ANDAMENTO' ? `<button class="btn btn-warning btn-sm" onclick="event.stopPropagation();pausar(${c.id})">⏸</button>` : ''}
+          ${['FILA','EM_ANDAMENTO','PAUSADA'].includes(c.status) ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();cancelar(${c.id})">✕</button>` : ''}
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function selectCamp(id, row) {
+  selectedCampId = id;
+  document.querySelectorAll('#camp-table-body tr').forEach(r => r.style.background = '');
+  row.style.background = '#E6F7F6';
+}
+
+async function disparar(id) {
+  try {
+    await sb(`/campanhas?id=eq.${id}`, { method:'PATCH', body: JSON.stringify({ status:'EM_ANDAMENTO' }) });
+    toast('✅ Campanha iniciada!', 'success');
+    loadCampanhas();
+  } catch(e) { toast('Erro: ' + e.message, 'error'); }
+}
+
+async function pausar(id) {
+  try {
+    await sb(`/campanhas?id=eq.${id}`, { method:'PATCH', body: JSON.stringify({ status:'PAUSADA' }) });
+    toast('⏸ Campanha pausada.', 'warning');
+    loadCampanhas();
+  } catch(e) { toast('Erro: ' + e.message, 'error'); }
+}
+
+async function cancelar(id) {
+  try {
+    await sb(`/campanhas?id=eq.${id}`, { method:'PATCH', body: JSON.stringify({ status:'CANCELADA' }) });
+    toast('Campanha cancelada.', 'warning');
+    loadCampanhas();
+  } catch(e) { toast('Erro: ' + e.message, 'error'); }
+}
+
+function dispararSelecionada()  { if (!selectedCampId) { toast('Selecione uma campanha', 'warning'); return; } disparar(selectedCampId); }
+function pausarSelecionada()    { if (!selectedCampId) { toast('Selecione uma campanha', 'warning'); return; } pausar(selectedCampId); }
+function cancelarSelecionada()  { if (!selectedCampId) { toast('Selecione uma campanha', 'warning'); return; } cancelar(selectedCampId); }
+
+async function verContatos(id, nome) {
+  document.getElementById('modal-camp-nome').textContent = `Contatos — ${nome}`;
+  document.getElementById('modal-cont').classList.add('open');
+  try {
+    const data = await sb(`/contatos?campanha_id=eq.${id}&select=*&order=id.asc&limit=200`);
+    document.getElementById('modal-cont-body').innerHTML = data.map(c =>
+      `<tr><td>${c.nome}</td><td class="td-mono">${c.telefone}</td><td>${badge(c.status)}</td>
+       <td>${c.valor||'—'}</td><td>${c.data_vencimento||'—'}</td></tr>`).join('') ||
+      '<tr class="empty-row"><td colspan="5">Sem contatos</td></tr>';
+  } catch(e) { toast('Erro: ' + e.message, 'error'); }
+}
+function closeModal() { document.getElementById('modal-cont').classList.remove('open'); }
+
+// ── NOVA CAMPANHA ─────────────────────────────────────────────────────────────
+async function loadTemplatesSelect() {
+  try {
+    templates = await sb('/templates_hsm?select=*&order=nome.asc');
+    const sel = document.getElementById('sel-hsm');
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+      templates.map(t => `<option value='${JSON.stringify({nome_meta:t.nome_meta,tipo_hsm:t.tipo_hsm,nome:t.nome})}'>${t.nome} (${t.tipo_hsm})</option>`).join('');
+  } catch(e) {
+    // tabela pode não existir ainda
+    document.getElementById('sel-hsm').innerHTML = '<option value="">Nenhum template cadastrado</option>';
+  }
+}
+
+function onHSMChange() {
+  const val = document.getElementById('sel-hsm').value;
+  const box = document.getElementById('hsm-info');
+  if (!val) { box.style.display='none'; return; }
+  const tpl = JSON.parse(val);
+  box.style.display = 'flex';
+  document.getElementById('hsm-info-text').innerHTML =
+    `<strong>${tpl.nome_meta}</strong> · ${tpl.tipo_hsm === 'variavel'
+      ? '📌 Variável — envia nome, telefone, valor e vencimento'
+      : '📄 Fixo — sem variáveis'}`;
+}
+
+async function criarCampanha() {
+  const nome   = document.getElementById('inp-nome-camp').value.trim();
+  const hsmV   = document.getElementById('sel-hsm').value;
+  const status = document.getElementById('sel-status-inicial').value;
+  if (!nome || !hsmV) { toast('Preencha nome e selecione um template', 'warning'); return; }
+  const hsm = JSON.parse(hsmV);
+  try {
+    await sb('/campanhas', { method:'POST', body: JSON.stringify({
+      nome, template: hsm.nome_meta, tipo_hsm: hsm.tipo_hsm,
+      status, total_contatos: 0, enviados: 0, erros: 0
+    })});
+    toast('✅ Campanha criada!', 'success');
+    document.getElementById('inp-nome-camp').value = '';
+    document.getElementById('sel-hsm').value = '';
+    document.getElementById('hsm-info').style.display = 'none';
+  } catch(e) { toast('Erro ao criar: ' + e.message, 'error'); }
+}
+
+// ── IMPORTAR ──────────────────────────────────────────────────────────────────
+async function loadCampanhasImport() {
+  try {
+    const data = await sb('/campanhas?select=id,nome&order=id.desc');
+    const sel = document.getElementById('sel-camp-import');
+    sel.innerHTML = '<option value="">Selecione uma campanha...</option>' +
+      data.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+  } catch(e) { toast('Erro: ' + e.message, 'error'); }
+}
+
+function onFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('file-name-label').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = evt => {
+    const text = evt.target.result;
+    const lines = text.split('\n').filter(l => l.trim());
+    if (lines.length < 2) { toast('Arquivo vazio ou inválido', 'error'); return; }
+    const sep = lines[0].includes(';') ? ';' : ',';
+    csvHeaders = lines[0].split(sep).map(h => h.trim().replace(/^["']|["']$/g,''));
+    csvData = lines.slice(1).map(l => {
+      const vals = l.split(sep);
+      return csvHeaders.reduce((acc, h, i) => {
+        acc[h] = (vals[i]||'').trim().replace(/^["']|["']$/g,'');
+        return acc;
+      }, {});
+    }).filter(r => Object.values(r).some(v => v));
+
+    const optBase = '<option value="">(não importar)</option>' + csvHeaders.map(h=>`<option value="${h}">${h}</option>`).join('');
+    const optReq  = '<option value="">Selecione...</option>'   + csvHeaders.map(h=>`<option value="${h}">${h}</option>`).join('');
+    ['map-nome','map-telefone'].forEach(id => document.getElementById(id).innerHTML = optReq);
+    ['map-cpf','map-valor','map-venc'].forEach(id => document.getElementById(id).innerHTML = optBase);
+
+    // Auto-map
+    const autoMap = { nome:'', telefone:'', cpf:'', valor:'', venc:'' };
+    csvHeaders.forEach(h => {
+      const hl = h.toLowerCase();
+      if (hl.includes('nome'))                                   autoMap.nome = h;
+      if (hl.includes('telef')||hl.includes('fone')||hl.includes('cel')||hl.includes('whats')) autoMap.telefone = h;
+      if (hl.includes('cpf'))                                    autoMap.cpf = h;
+      if (hl.includes('valor')||hl.includes('divid'))           autoMap.valor = h;
+      if (hl.includes('venc')||hl.includes('expir')||hl.includes('data')) autoMap.venc = h;
+    });
+    Object.entries(autoMap).forEach(([k,v]) => {
+      const el = document.getElementById(`map-${k}`);
+      if (el && v) el.value = v;
+    });
+
+    const thead = document.getElementById('preview-thead');
+    const tbody = document.getElementById('preview-tbody');
+    thead.innerHTML = '<tr>' + csvHeaders.map(h=>`<th>${h}</th>`).join('') + '</tr>';
+    tbody.innerHTML = csvData.slice(0,10).map(row =>
+      '<tr>' + csvHeaders.map(h=>`<td>${row[h]||''}</td>`).join('') + '</tr>'
+    ).join('');
+
+    setStep(2);
+    document.getElementById('imp-step-1').style.display = 'none';
+    document.getElementById('imp-step-2').style.display = 'block';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    const el = document.getElementById(`step-${i}`);
+    el.classList.remove('active','done');
+    if (i < n)  el.classList.add('done');
+    if (i === n) el.classList.add('active');
+    el.querySelector('.step-num').textContent = i < n ? '✓' : i;
+  });
+}
+
+function resetImport() {
+  csvData = []; csvHeaders = [];
+  document.getElementById('file-input').value = '';
+  document.getElementById('imp-step-1').style.display = 'block';
+  document.getElementById('imp-step-2').style.display = 'none';
+  document.getElementById('imp-step-3').style.display = 'none';
+  setStep(1);
+}
+
+async function importar() {
+  const campId = document.getElementById('sel-camp-import').value;
+  const mNome  = document.getElementById('map-nome').value;
+  const mTel   = document.getElementById('map-telefone').value;
+  const mCpf   = document.getElementById('map-cpf').value;
+  const mValor = document.getElementById('map-valor').value;
+  const mVenc  = document.getElementById('map-venc').value;
+
+  if (!campId)       { toast('Selecione uma campanha', 'warning'); return; }
+  if (!mNome||!mTel) { toast('Mapeie pelo menos Nome e Telefone', 'warning'); return; }
+
+  const btn = document.getElementById('btn-importar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Importando...';
+
+  try {
+    const contatos = csvData.map(row => {
+      const tel = (row[mTel]||'').replace(/\D/g,'');
+      return {
+        campanha_id: parseInt(campId),
+        nome: (row[mNome]||'').trim(),
+        telefone: tel.startsWith('55') ? tel : '55' + tel,
+        cpf: mCpf ? (row[mCpf]||'').replace(/\D/g,'') || null : null,
+        valor: mValor ? (row[mValor]||null) : null,
+        data_vencimento: mVenc ? (row[mVenc]||null) : null,
+        status: 'PENDENTE',
+      };
+    }).filter(c => c.nome && c.telefone);
+
+    for (let i=0; i<contatos.length; i+=100) {
+      await sb('/contatos', { method:'POST',
+        headers: {...SB_H, Prefer:'resolution=ignore-duplicates,return=minimal'},
+        body: JSON.stringify(contatos.slice(i,i+100))
+      });
+    }
+
+    await sb(`/campanhas?id=eq.${campId}`, { method:'PATCH',
+      body: JSON.stringify({ total_contatos: contatos.length })
+    });
+
+    document.getElementById('import-result-text').textContent =
+      `${contatos.length} contatos adicionados à campanha com sucesso.`;
+    document.getElementById('imp-step-2').style.display = 'none';
+    document.getElementById('imp-step-3').style.display = 'block';
+    setStep(3);
+    toast(`✅ ${contatos.length} contatos importados!`, 'success');
+  } catch(e) {
+    toast('Erro ao importar: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '📥 Importar Contatos';
+  }
+}
+
+// ── ACOMPANHAR ────────────────────────────────────────────────────────────────
+async function loadCampanhasAcomp() {
+  try {
+    const data = await sb('/campanhas?select=id,nome,status&order=id.desc');
+    const sel = document.getElementById('sel-camp-acomp');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Selecione uma campanha...</option>' +
+      data.map(c => `<option value="${c.id}">${c.nome} (${c.status})</option>`).join('');
+    if (cur) sel.value = cur;
+  } catch(e) {}
+}
+
+async function loadContatos() {
+  const id = document.getElementById('sel-camp-acomp').value;
+  if (!id) return;
+  try {
+    contatosAll = await sb(`/contatos?campanha_id=eq.${id}&select=*&order=id.asc&limit=500`);
+    const camps = await sb(`/campanhas?id=eq.${id}&select=nome,status,total_contatos,enviados`);
+    const camp  = camps[0] || {};
+
+    const env  = contatosAll.filter(c=>c.status==='ENVIADO').length;
+    const pend = contatosAll.filter(c=>c.status==='PENDENTE').length;
+    const err  = contatosAll.filter(c=>c.status==='ERRO').length;
+    const tot  = contatosAll.length;
+    const pct  = tot ? Math.round((env/tot)*100) : 0;
+
+    document.getElementById('ac-env').textContent  = env;
+    document.getElementById('ac-pend').textContent = pend;
+    document.getElementById('ac-err').textContent  = err;
+    document.getElementById('ac-tot').textContent  = tot;
+    document.getElementById('ac-pct').textContent  = pct + '%';
+    document.getElementById('ac-progress').style.width = pct + '%';
+    document.getElementById('ac-camp-nome').textContent = camp.nome || '';
+    document.getElementById('ac-status-badge').innerHTML = badge(camp.status);
+    document.getElementById('ac-progress-text').textContent = `${env} de ${tot} enviados`;
+
+    document.getElementById('acomp-stats').style.display = 'block';
+    document.getElementById('acomp-filters').style.display = 'block';
+    renderContatos();
+  } catch(e) { toast('Erro: ' + e.message, 'error'); }
+}
+
+function renderContatos() {
+  const data = filterStatus === 'TODOS' ? contatosAll : contatosAll.filter(c=>c.status===filterStatus);
+  const tbody = document.getElementById('cont-table-body');
+  if (!data.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="9">${filterStatus==='TODOS'?'Nenhum contato':'Nenhum contato com status '+filterStatus}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map((c,i) => `
+    <tr>
+      <td class="td-muted">${i+1}</td>
+      <td style="font-weight:500">${c.nome}</td>
+      <td class="td-mono">${c.telefone}</td>
+      <td class="td-muted">${c.cpf||'—'}</td>
+      <td>${badge(c.status)}</td>
+      <td>${c.valor?'R$ '+c.valor:'—'}</td>
+      <td class="td-muted">${c.data_vencimento||'—'}</td>
+      <td class="td-muted">${fmtDate(c.enviado_em)}</td>
+      <td style="font-size:11px;color:var(--red);max-width:160px;overflow:hidden;text-overflow:ellipsis">${c.erro||'—'}</td>
+    </tr>`).join('');
+}
+
+function setFilter(status) {
+  filterStatus = status;
+  ['todos','env','pend','erro'].forEach(k => {
+    const map = {todos:'TODOS',env:'ENVIADO',pend:'PENDENTE',erro:'ERRO'};
+    const btn = document.getElementById('fil-'+k);
+    if (btn) btn.className = map[k]===status ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+  });
+  renderContatos();
+}
+
+function toggleAuto() {
+  autoRefresh = !autoRefresh;
+  document.getElementById('toggle-auto').classList.toggle('on', autoRefresh);
+  if (autoRefresh) { autoInterval = setInterval(loadContatos, 5000); }
+  else { clearInterval(autoInterval); }
+}
+
+// ── TEMPLATES ─────────────────────────────────────────────────────────────────
+async function loadTemplates() {
+  try {
+    templates = await sb('/templates_hsm?select=*&order=nome.asc');
+    document.getElementById('tpl-table-body').innerHTML = templates.length
+      ? templates.map(t => `
+          <tr>
+            <td style="font-weight:500">${t.nome}</td>
+            <td><code>${t.nome_meta}</code></td>
+            <td>${t.tipo_hsm}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="deletarTemplate(${t.id})">🗑</button></td>
+          </tr>`).join('')
+      : '<tr class="empty-row"><td colspan="4">Nenhum template cadastrado</td></tr>';
+  } catch(e) {
+    document.getElementById('tpl-table-body').innerHTML = '<tr class="empty-row"><td colspan="4">Tabela templates_hsm não encontrada</td></tr>';
+  }
+}
+
+async function salvarTemplate() {
+  const nome    = document.getElementById('inp-tpl-nome').value.trim();
+  const meta    = document.getElementById('inp-tpl-meta').value.trim();
+  const tipo    = document.getElementById('sel-tpl-tipo').value;
+  const preview = document.getElementById('inp-tpl-preview').value.trim();
+  if (!meta) { toast('Nome Meta obrigatório', 'warning'); return; }
+  try {
+    await sb('/templates_hsm', { method:'POST', body: JSON.stringify({
+      nome: nome||meta, nome_meta: meta, tipo_hsm: tipo, texto_preview: preview
+    })});
+    toast('✅ Template salvo!', 'success');
+    document.getElementById('inp-tpl-nome').value = '';
+    document.getElementById('inp-tpl-meta').value = '';
+    document.getElementById('inp-tpl-preview').value = '';
+    loadTemplates();
+  } catch(e) { toast('Erro: ' + e.message, 'error'); }
+}
+
+async function deletarTemplate(id) {
+  try {
+    await sb(`/templates_hsm?id=eq.${id}`, { method:'DELETE' });
+    toast('Template removido.', 'warning');
+    loadTemplates();
+  } catch(e) { toast('Erro: ' + e.message, 'error'); }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadDashboard();
+</script>
+</body>
+</html>
