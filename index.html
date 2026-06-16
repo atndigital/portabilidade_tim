@@ -769,7 +769,7 @@
       <div class="card-header">Templates cadastrados</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Nome</th><th>Meta</th><th>Tipo</th><th></th></tr></thead>
+          <thead><tr><th>Nome</th><th>Meta</th><th>Tipo</th><th>Ativo</th><th></th></tr></thead>
           <tbody id="tpl-table-body">
             <tr class="empty-row"><td colspan="4">Nenhum template</td></tr>
           </tbody>
@@ -991,23 +991,13 @@ function closeModal() { document.getElementById('modal-cont').classList.remove('
 async function loadTemplatesSelect() {
   const sel = document.getElementById('sel-hsm');
   try {
-    templates = await sb('/templates_hsm?select=*&order=nome.asc');
+    templates = await sb('/templates_hsm?select=*&ativo=eq.true&order=nome_exibicao.asc');
     if (templates.length) {
       sel.innerHTML = '<option value="">Selecione...</option>' +
-        templates.map(t => `<option value='${JSON.stringify({nome_meta:t.nome_meta,tipo_hsm:t.tipo_hsm,nome:t.nome})}'>${t.nome} (${t.tipo_hsm})</option>`).join('');
+        templates.map(t => `<option value='${JSON.stringify({nome_meta:t.nome_meta,tipo_hsm:t.tipo_hsm,nome:t.nome_exibicao})}'>${t.nome_exibicao} (${t.tipo_hsm})</option>`).join('');
       return;
     }
-  } catch(e) {}
-  // Fallback: pegar templates únicos já usados nas campanhas
-  try {
-    const camps = await sb('/campanhas?select=template,tipo_hsm&order=template.asc');
-    const unicos = [...new Map(camps.filter(c=>c.template).map(c => [c.template, c])).values()];
-    if (unicos.length) {
-      sel.innerHTML = '<option value="">Selecione...</option>' +
-        unicos.map(c => `<option value='${JSON.stringify({nome_meta:c.template,tipo_hsm:c.tipo_hsm||'fixo',nome:c.template})}'>${c.template} (${c.tipo_hsm||'fixo'})</option>`).join('');
-    } else {
-      sel.innerHTML = '<option value="">Nenhum template encontrado — cadastre na aba Templates</option>';
-    }
+    sel.innerHTML = '<option value="">Nenhum template ativo — ative na aba Templates</option>';
   } catch(e) {
     sel.innerHTML = '<option value="">Erro ao carregar templates</option>';
   }
@@ -1262,33 +1252,26 @@ function toggleAuto() {
 // ── TEMPLATES ─────────────────────────────────────────────────────────────────
 async function loadTemplates() {
   try {
-    templates = await sb('/templates_hsm?select=*&order=nome.asc');
+    templates = await sb('/templates_hsm?select=*&order=nome_exibicao.asc');
     document.getElementById('tpl-table-body').innerHTML = templates.length
       ? templates.map(t => `
           <tr>
-            <td style="font-weight:500">${t.nome||t.nome_meta}</td>
+            <td style="font-weight:500">${t.nome_exibicao||t.nome_meta}</td>
             <td><code>${t.nome_meta}</code></td>
             <td>${t.tipo_hsm}</td>
-            <td><button class="btn btn-danger btn-sm" onclick="deletarTemplate(${t.id})">🗑</button></td>
+            <td>${t.ativo ? '<span class="badge badge-green">Ativo</span>' : '<span class="badge badge-gray">Inativo</span>'}</td>
+            <td>
+              <div style="display:flex;gap:6px;align-items:center">
+                <button class="btn btn-sm ${t.ativo ? 'btn-ghost' : 'btn-success'}" onclick="toggleTemplate(${t.id}, ${t.ativo})">
+                  ${t.ativo ? '⏸ Desativar' : '▶ Ativar'}
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="deletarTemplate(${t.id})">🗑</button>
+              </div>
+            </td>
           </tr>`).join('')
       : '<tr class="empty-row"><td colspan="4">Nenhum template cadastrado</td></tr>';
   } catch(e) {
-    // Tabela não existe — criar instrução SQL
-    document.getElementById('tpl-table-body').innerHTML = `
-      <tr><td colspan="4" style="padding:20px">
-        <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:14px;font-size:12px;color:#92400E">
-          ⚠️ Tabela <code>templates_hsm</code> não encontrada no Supabase.<br><br>
-          Execute este SQL no Supabase para criá-la:<br>
-          <code style="display:block;margin-top:8px;background:#fff;padding:8px;border-radius:4px;font-size:11px;white-space:pre">CREATE TABLE templates_hsm (
-  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  nome TEXT,
-  nome_meta TEXT NOT NULL,
-  tipo_hsm TEXT DEFAULT 'fixo',
-  texto_preview TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);</code>
-        </div>
-      </td></tr>`;
+    document.getElementById('tpl-table-body').innerHTML = '<tr class="empty-row"><td colspan="4">Erro ao carregar templates: ' + e.message + '</td></tr>';
   }
 }
 
@@ -1300,13 +1283,22 @@ async function salvarTemplate() {
   if (!meta) { toast('Nome Meta obrigatório', 'warning'); return; }
   try {
     await sb('/templates_hsm', { method:'POST', body: JSON.stringify({
-      nome: nome||meta, nome_meta: meta, tipo_hsm: tipo, texto_preview: preview
+      nome_exibicao: nome||meta, nome_meta: meta, tipo_hsm: tipo, ativo: true
     })});
     toast('✅ Template salvo!', 'success');
     document.getElementById('inp-tpl-nome').value = '';
     document.getElementById('inp-tpl-meta').value = '';
     document.getElementById('inp-tpl-preview').value = '';
     loadTemplates();
+  } catch(e) { toast('Erro: ' + e.message, 'error'); }
+}
+
+async function toggleTemplate(id, ativo) {
+  try {
+    await sb(`/templates_hsm?id=eq.${id}`, { method:'PATCH', body: JSON.stringify({ ativo: !ativo }) });
+    toast(ativo ? '⏸ Template desativado.' : '✅ Template ativado!', ativo ? 'warning' : 'success');
+    loadTemplates();
+    loadTemplatesSelect();
   } catch(e) { toast('Erro: ' + e.message, 'error'); }
 }
 
