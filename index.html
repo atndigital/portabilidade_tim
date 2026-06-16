@@ -395,7 +395,7 @@
     <div class="stat-card red">
       <div class="stat-icon">❌</div>
       <div class="stat-num" id="stat-erros">—</div>
-      <div class="stat-label">Erros</div>
+      <div class="stat-label">Com erro</div>
     </div>
   </div>
 
@@ -441,10 +441,10 @@
       <table>
         <thead><tr>
           <th>#</th><th>Campanha</th><th>Template</th><th>Tipo</th>
-          <th>Status</th><th>Total</th><th>Enviados</th><th>Erros</th><th>Data</th><th>Ações</th>
+          <th>Status</th><th>Total</th><th>Enviados</th><th>Data</th><th>Ações</th>
         </tr></thead>
         <tbody id="camp-table-body">
-          <tr class="empty-row"><td colspan="10">Carregando...</td></tr>
+          <tr class="empty-row"><td colspan="9">Carregando...</td></tr>
         </tbody>
       </table>
     </div>
@@ -889,7 +889,7 @@ async function loadDashboard() {
     document.getElementById('stat-enviados').textContent   = contatos.filter(c=>c.status==='ENVIADO').length.toLocaleString();
     document.getElementById('stat-pendentes').textContent  = contatos.filter(c=>c.status==='PENDENTE').length.toLocaleString();
     document.getElementById('stat-erros').textContent      = contatos.filter(c=>c.status==='ERRO').length.toLocaleString();
-    document.getElementById('badge-camps').textContent     = `${camps.length} campanhas`;
+    document.getElementById('badge-camps').textContent     = `${camps.length} campanha${camps.length!==1?'s':''}`;
 
     const tbody = document.getElementById('dash-table-body');
     if (!camps.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Nenhuma campanha encontrada</td></tr>'; return; }
@@ -904,7 +904,7 @@ async function loadDashboard() {
         <td>${badge(c.status)}</td>
         <td>${tot}</td>
         <td><b style="color:#00A896">${env}</b>${tot?` <span class="td-muted">(${pct}%)</span>`:''}</td>
-        <td class="td-muted">${(c.created_at||c.data||'').substring(0,10)||'—'}</td>
+        <td class="td-muted">${(c.data||'').toString().substring(0,10)||'—'}</td>
       </tr>`;
     }).join('');
   } catch(e) { toast('Erro ao carregar dashboard: ' + e.message, 'error'); }
@@ -921,7 +921,7 @@ async function loadCampanhas() {
 function renderCampanhas() {
   const tbody = document.getElementById('camp-table-body');
   if (!campanhas.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Nenhuma campanha. Crie uma nova!</td></tr>'; return;
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Nenhuma campanha. Crie uma nova!</td></tr>'; return;
   }
   tbody.innerHTML = campanhas.map(c => `
     <tr onclick="selectCamp(${c.id}, this)" style="cursor:pointer" data-id="${c.id}">
@@ -932,8 +932,7 @@ function renderCampanhas() {
       <td>${badge(c.status)}</td>
       <td>${c.total_contatos||0}</td>
       <td><b style="color:#00A896">${c.enviados||0}</b></td>
-      <td style="color:var(--red)">${c.erros||0}</td>
-      <td class="td-muted">${(c.created_at||'').substring(0,10)||'—'}</td>
+      <td class="td-muted">${(c.data||'').toString().substring(0,10)||'—'}</td>
       <td>
         <div style="display:flex;gap:5px">
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();verContatos(${c.id},'${c.nome.replace(/'/g,"\\'")}')">👁 Ver</button>
@@ -1029,7 +1028,7 @@ async function criarCampanha() {
   try {
     await sb('/campanhas', { method:'POST', body: JSON.stringify({
       nome, template: hsm.nome_meta, tipo_hsm: hsm.tipo_hsm,
-      status, total_contatos: 0, enviados: 0, erros: 0
+      status, total_contatos: 0, enviados: 0
     })});
     toast('✅ Campanha criada!', 'success');
     document.getElementById('inp-nome-camp').value = '';
