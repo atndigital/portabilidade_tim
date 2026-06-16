@@ -552,6 +552,11 @@
           </div>
           <div></div>
         </div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="btn btn-ghost btn-sm" onclick="baixarCSVModelo()">
+            📥 Baixar CSV modelo
+          </button>
+        </div>
         <div class="upload-zone" onclick="document.getElementById('file-input').click()">
           <div class="upload-icon">📂</div>
           <div class="upload-title">Clique para selecionar o CSV</div>
@@ -1308,6 +1313,24 @@ async function deletarTemplate(id) {
     toast('Template removido.', 'warning');
     loadTemplates();
   } catch(e) { toast('Erro: ' + e.message, 'error'); }
+}
+
+// ── CSV MODELO ───────────────────────────────────────────────────────────────────
+function baixarCSVModelo() {
+  const linhas = [
+    ['nome', 'telefone', 'cpf', 'valor', 'data_vencimento'],
+    ['João Silva', '5521999990001', '12345678901', '89.90', '10/07/2025'],
+    ['Maria Souza', '5511988880002', '98765432100', '129.90', '15/07/2025'],
+  ];
+  const csv = linhas.map(l => l.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'modelo_disparo_whatsapp.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('📥 CSV modelo baixado!', 'success');
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
