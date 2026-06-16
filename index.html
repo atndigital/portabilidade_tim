@@ -991,7 +991,7 @@ function closeModal() { document.getElementById('modal-cont').classList.remove('
 async function loadTemplatesSelect() {
   const sel = document.getElementById('sel-hsm');
   try {
-    templates = await sb('/templates_hsm?select=*&ativo=eq.true&order=nome_exibicao.asc');
+    templates = await sb('/templates_hsm?select=*&ativo=is.true&order=nome_exibicao.asc');
     if (templates.length) {
       sel.innerHTML = '<option value="">Selecione...</option>' +
         templates.map(t => `<option value='${JSON.stringify({nome_meta:t.nome_meta,tipo_hsm:t.tipo_hsm,nome:t.nome_exibicao})}'>${t.nome_exibicao} (${t.tipo_hsm})</option>`).join('');
