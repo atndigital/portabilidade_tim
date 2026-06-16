@@ -879,7 +879,7 @@ function fmtDate(d) {
 async function loadDashboard() {
   try {
     const [contatos, camps] = await Promise.all([
-      sb('/contatos?select=status'),
+      sb('/contatos?select=status,campanha_id'),
       sb('/campanhas?select=*&order=id.desc&limit=10'),
     ]);
     const ativas = camps.filter(c => c.status === 'EM_ANDAMENTO').length;
@@ -889,19 +889,28 @@ async function loadDashboard() {
     document.getElementById('stat-erros').textContent      = contatos.filter(c=>c.status==='ERRO').length.toLocaleString();
     document.getElementById('badge-camps').textContent     = `${camps.length} campanha${camps.length!==1?'s':''}`;
 
+    // Agrupar contatos por campanha para calcular enviados reais
+    const contatosPorCamp = {};
+    contatos.forEach(c => {
+      if (!contatosPorCamp[c.campanha_id]) contatosPorCamp[c.campanha_id] = {env:0, pend:0, erro:0};
+      if (c.status==='ENVIADO')  contatosPorCamp[c.campanha_id].env++;
+      if (c.status==='PENDENTE') contatosPorCamp[c.campanha_id].pend++;
+      if (c.status==='ERRO')     contatosPorCamp[c.campanha_id].erro++;
+    });
+
     const tbody = document.getElementById('dash-table-body');
     if (!camps.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Nenhuma campanha encontrada</td></tr>'; return; }
     tbody.innerHTML = camps.map(c => {
       const tot = c.total_contatos || 0;
-      const env = c.enviados || 0;
+      const env = (contatosPorCamp[c.id]||{}).env || 0;
       const pct = tot ? Math.round((env/tot)*100) : 0;
       return `<tr>
         <td style="font-weight:600">${c.nome}</td>
         <td><code>${c.template||'—'}</code></td>
         <td>${c.tipo_hsm==='variavel'?'📌 Variável':'📄 Fixo'}</td>
         <td>${badge(c.status)}</td>
-        <td>${tot}</td>
-        <td><b style="color:#00A896">${env}</b>${tot?` <span class="td-muted">(${pct}%)</span>`:''}</td>
+        <td>${tot.toLocaleString('pt-BR')}</td>
+        <td><b style="color:#00A896">${env.toLocaleString('pt-BR')}</b>${tot?` <span class="td-muted">(${pct}%)</span>`:''}</td>
         <td class="td-muted">${(c.data||'').toString().substring(0,10)||'—'}</td>
       </tr>`;
     }).join('');
@@ -911,7 +920,17 @@ async function loadDashboard() {
 // ── CAMPANHAS ─────────────────────────────────────────────────────────────────
 async function loadCampanhas() {
   try {
-    campanhas = await sb('/campanhas?select=*&order=id.desc');
+    const [camps, conts] = await Promise.all([
+      sb('/campanhas?select=*&order=id.desc'),
+      sb('/contatos?select=status,campanha_id'),
+    ]);
+    campanhas = camps;
+    // Calcular enviados/erros reais por campanha
+    campanhas.forEach(c => {
+      const group = conts.filter(ct => ct.campanha_id === c.id);
+      c._env  = group.filter(ct => ct.status==='ENVIADO').length;
+      c._erro = group.filter(ct => ct.status==='ERRO').length;
+    });
     renderCampanhas();
   } catch(e) { toast('Erro: ' + e.message, 'error'); }
 }
@@ -929,7 +948,7 @@ function renderCampanhas() {
       <td>${c.tipo_hsm==='variavel'?'📌 Var':'📄 Fixo'}</td>
       <td>${badge(c.status)}</td>
       <td>${(c.total_contatos||0).toLocaleString('pt-BR')}</td>
-      <td><b style="color:#00A896">${(c.enviados||0).toLocaleString('pt-BR')}</b></td>
+      <td><b style="color:#00A896">${(c._env||0).toLocaleString('pt-BR')}</b></td>
       <td class="td-muted">${(c.data||'').toString().substring(0,10)||'—'}</td>
       <td>
         <div style="display:flex;gap:5px">
