@@ -899,7 +899,7 @@ async function loadDashboard() {
         <td>${badge(c.status)}</td>
         <td>${tot}</td>
         <td><b style="color:#00A896">${env}</b>${tot?` <span class="td-muted">(${pct}%)</span>`:''}</td>
-        <td class="td-muted">${(c.created_at||'').substring(0,10)||'—'}</td>
+        <td class="td-muted">${(c.created_at||c.data||'').substring(0,10)||'—'}</td>
       </tr>`;
     }).join('');
   } catch(e) { toast('Erro ao carregar dashboard: ' + e.message, 'error'); }
@@ -989,14 +989,27 @@ function closeModal() { document.getElementById('modal-cont').classList.remove('
 
 // ── NOVA CAMPANHA ─────────────────────────────────────────────────────────────
 async function loadTemplatesSelect() {
+  const sel = document.getElementById('sel-hsm');
   try {
     templates = await sb('/templates_hsm?select=*&order=nome.asc');
-    const sel = document.getElementById('sel-hsm');
-    sel.innerHTML = '<option value="">Selecione...</option>' +
-      templates.map(t => `<option value='${JSON.stringify({nome_meta:t.nome_meta,tipo_hsm:t.tipo_hsm,nome:t.nome})}'>${t.nome} (${t.tipo_hsm})</option>`).join('');
+    if (templates.length) {
+      sel.innerHTML = '<option value="">Selecione...</option>' +
+        templates.map(t => `<option value='${JSON.stringify({nome_meta:t.nome_meta,tipo_hsm:t.tipo_hsm,nome:t.nome})}'>${t.nome} (${t.tipo_hsm})</option>`).join('');
+      return;
+    }
+  } catch(e) {}
+  // Fallback: pegar templates únicos já usados nas campanhas
+  try {
+    const camps = await sb('/campanhas?select=template,tipo_hsm&order=template.asc');
+    const unicos = [...new Map(camps.filter(c=>c.template).map(c => [c.template, c])).values()];
+    if (unicos.length) {
+      sel.innerHTML = '<option value="">Selecione...</option>' +
+        unicos.map(c => `<option value='${JSON.stringify({nome_meta:c.template,tipo_hsm:c.tipo_hsm||'fixo',nome:c.template})}'>${c.template} (${c.tipo_hsm||'fixo'})</option>`).join('');
+    } else {
+      sel.innerHTML = '<option value="">Nenhum template encontrado — cadastre na aba Templates</option>';
+    }
   } catch(e) {
-    // tabela pode não existir ainda
-    document.getElementById('sel-hsm').innerHTML = '<option value="">Nenhum template cadastrado</option>';
+    sel.innerHTML = '<option value="">Erro ao carregar templates</option>';
   }
 }
 
@@ -1253,14 +1266,29 @@ async function loadTemplates() {
     document.getElementById('tpl-table-body').innerHTML = templates.length
       ? templates.map(t => `
           <tr>
-            <td style="font-weight:500">${t.nome}</td>
+            <td style="font-weight:500">${t.nome||t.nome_meta}</td>
             <td><code>${t.nome_meta}</code></td>
             <td>${t.tipo_hsm}</td>
             <td><button class="btn btn-danger btn-sm" onclick="deletarTemplate(${t.id})">🗑</button></td>
           </tr>`).join('')
       : '<tr class="empty-row"><td colspan="4">Nenhum template cadastrado</td></tr>';
   } catch(e) {
-    document.getElementById('tpl-table-body').innerHTML = '<tr class="empty-row"><td colspan="4">Tabela templates_hsm não encontrada</td></tr>';
+    // Tabela não existe — criar instrução SQL
+    document.getElementById('tpl-table-body').innerHTML = `
+      <tr><td colspan="4" style="padding:20px">
+        <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:14px;font-size:12px;color:#92400E">
+          ⚠️ Tabela <code>templates_hsm</code> não encontrada no Supabase.<br><br>
+          Execute este SQL no Supabase para criá-la:<br>
+          <code style="display:block;margin-top:8px;background:#fff;padding:8px;border-radius:4px;font-size:11px;white-space:pre">CREATE TABLE templates_hsm (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nome TEXT,
+  nome_meta TEXT NOT NULL,
+  tipo_hsm TEXT DEFAULT 'fixo',
+  texto_preview TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);</code>
+        </div>
+      </td></tr>`;
   }
 }
 
